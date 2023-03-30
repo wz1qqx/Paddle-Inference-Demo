@@ -3,11 +3,13 @@ set +x
 set -e
 
 work_path=$(dirname $(readlink -f $0))
-model_dir=/workspace/Models
+model_dir=${work_path}/../../../Models
+model_name=infrence_model/model.pdmodel
+param_name=infrence_model/model.pdiparams
 
 # 1. compile
 if [ ! -d ${work_path}/build ]; then
-    echo "compile demo.cc!"
+    echo "compile test.cc!"
     bash ${work_path}/compile.sh
 fi
 # 2. download model
@@ -17,5 +19,5 @@ fi
 # fi
 
 # 3. run
-./build/test --model_file ${model_dir}/hrnet/model.pdmodel --param_file ${model_dir}/hrnet/model.pdiparams --input_shapes "1,3,512,960"
+./build/test --model_file ${model_dir}/hrnet/${model_name} --param_file ${model_dir}/hrnet/${param_name} --input_shapes "1,3,512,960"
 # ./build/test --model_file ${model_dir}/paddle_appearance/model.pdmodel --param_file ${model_dir}/paddle_appearance/model.pdiparams --input_shapes "1,64,64,3"
