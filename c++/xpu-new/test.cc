@@ -43,6 +43,14 @@ std::string shape_print(const std::vector<shape_t>& shapes) {
   return shapes_str;
 }
 
+std::string shape_print(const shape_t& shape) {
+  std::string shape_str{""};
+  for (auto i : shape) {
+    shape_str += std::to_string(i) + " ";
+  }
+  return shape_str;
+}
+
 std::vector<std::string> split_string(const std::string& str_in) {
   std::vector<std::string> str_out;
   std::string tmp_str = str_in;
@@ -90,6 +98,7 @@ std::shared_ptr<Predictor> InitPredictor() {
   config.SetModel(FLAGS_model_file, FLAGS_param_file);
   // Enable Kunlun XPU
   config.EnableXpu();
+  config.SetXpuDeviceId(0);
 
   // Open the memory optim.
   config.EnableMemoryOptim();
@@ -169,7 +178,7 @@ void RunModel(Predictor *predictor,
     auto output_shape = output_t->shape();
     int output_t_numel = std::accumulate(output_shape.begin(), output_shape.end(), 
                                   1, std::multiplies<int>());
-    output_t->CopyToCpu(out_data->data());
+    output_t->CopyToCpu(out_data.data());
     LOG(INFO) << "\n====== output summary ======\n" 
               << "output shape(NCHW):" << shape_print(output_shape) << "\n"
               << "output tensor[" << j << "]'s elem num: " << output_t_numel << "\n"
@@ -199,9 +208,9 @@ int main(int argc, char *argv[]) {
         << " --param_file=                string  Param file in PaddlePaddle combined model.\n"
         << " --input_shapes=              string  input shapes of input tensor.\n"
         << " --warmup=1                   int32   Number of warmups.\n"
-        << " --repeats=100                int32   Number of repeats.\n";
-        << " --print_outputs=             bool    Print outputs tensor elem.\n";
-        << " --percision_test=            bool    compare xpu-infer output with cpu-infer config.\n";
+        << " --repeats=100                int32   Number of repeats.\n"
+        << " --print_outputs=             bool    Print outputs tensor elem.\n"
+        << " --percision_test=            bool    compare xpu-infer output with cpu-infer config.\n"
         << " --profile_test=              bool    Do op profiling of input model.\n";
     exit(1);
   }
@@ -222,9 +231,9 @@ int main(int argc, char *argv[]) {
   }
   LOG(INFO) << "\n======= Model Messages =======\n"
             << "input_shape(s) (NCHW):" << shape_print(input_shapes) << "\n"
-            << "model_dir:" << model_dir << "\n"
-            << "warmup:" << warmup << "\n"
-            << "repeats:" << repeats << "\n";
+            << "model_dir:" << FLAGS_model_dir << "\n"
+            << "warmup:" << FLAGS_warmup << "\n"
+            << "repeats:" << FLAGS_repeats << "\n";
   // prepare input data
   std::cout << "input_shapes.size():" << input_shapes.size() << std::endl;
   auto input_names = predictor->GetInputNames();
@@ -251,9 +260,9 @@ int main(int argc, char *argv[]) {
 
   if (FLAGS_percision_test) {
     float abs = 1e-15f;
-    for (size_t i = 0; i < output_data_xpu.size(); i += 1) {
-      for (size_t j = 0; j < output_data_xpu[i].size(); j += 1) {
-        float diff = std::abs(output_data_cpu[i][j] - output_data_xpu[i][j]);
+    for (size_t i = 0; i < out_datas.size(); i += 1) {
+      for (size_t j = 0; j < out_datas[i].size(); j += 1) {
+        float diff = std::abs(out_datas[i][j] - out_datas[i][j]);
         if (diff > abs) abs = diff;
       }
     }

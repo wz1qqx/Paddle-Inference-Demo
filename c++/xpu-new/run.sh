@@ -4,8 +4,8 @@ set -e
 
 work_path=$(dirname $(readlink -f $0))
 model_dir=${work_path}/../../../Models
-model_name=infrence_model/model.pdmodel
-param_name=infrence_model/model.pdiparams
+model_name=inference_model/model.pdmodel
+param_name=inference_model/model.pdiparams
 
 # 1. compile
 if [ ! -d ${work_path}/build ]; then
